@@ -99,6 +99,25 @@ svg.bond{width:100%;max-width:300px;height:auto;overflow:visible}
 .ops button.sel{border-color:var(--whole);background:var(--whole);color:var(--card)}
 .steps{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700;text-align:center;min-height:1.3em;margin:0}
 .row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.tabs button{font-size:.95rem}
+.eqline{margin:0;font:800 1.5rem/1.25 var(--display);text-align:center;font-variant-numeric:tabular-nums;text-wrap:balance;min-height:1.25em}
+.eqline .t{color:var(--whole)}
+.eqline.win .t{color:var(--good)}
+.eqline .dim{color:var(--muted)}
+.rule{margin:0;font-size:.85rem;color:var(--muted);text-align:center;text-wrap:balance}
+.modebar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.timer{font:800 1.8rem/1 var(--display);font-variant-numeric:tabular-nums;color:var(--part)}
+.sprintbtn{font:800 1rem var(--display);padding:6px 14px;border-radius:999px;border:2px solid var(--part);background:var(--card);color:var(--part);cursor:pointer}
+.sprintbtn[aria-pressed="true"]{background:var(--part);color:var(--card)}
+/* Arrays */
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;width:100%;max-width:340px;touch-action:none;cursor:pointer}
+.grid span{aspect-ratio:1;border-radius:50%;border:2px dashed var(--line)}
+.grid span.on{background:var(--whole);border:2px solid var(--whole)}
+.grid span.pv{background:var(--tile);border:2px solid var(--whole)}
+.grid.win span.on{background:var(--good);border-color:var(--good)}
+.found{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.found span{font:700 .9rem var(--body);padding:3px 10px;border-radius:999px;border:2px solid var(--line);color:var(--muted)}
+.found span.got{border-color:var(--good);color:var(--good)}
 </style>
 </head>
 <body>
@@ -107,13 +126,15 @@ svg.bond{width:100%;max-width:300px;height:auto;overflow:visible}
   <div class="tabs" role="tablist">
     <button id="tabBonds" role="tab" aria-selected="true">Number Bonds</button>
     <button id="tabMake" role="tab" aria-selected="false">Make the Number</button>
+    <button id="tabArr" role="tab" aria-selected="false">Arrays</button>
   </div>
 
   <!-- NUMBER BONDS -->
   <section class="game" id="bondsGame">
     <div class="ctl"><span class="lbl">Grade</span><div class="pills" id="bGrades"></div></div>
     <div class="ctl"><span class="lbl">Level</span><div class="pills" id="bLevels"><button data-l="1">1</button><button data-l="2">2</button></div></div>
-    <div class="top"><p class="note" id="bNote"></p><div class="stats">Streak <b id="streak">0</b> · Best <b id="best">0</b></div></div>
+    <div class="top"><p class="note" id="bNote"></p><div class="stats"><span id="sLbl">Streak</span> <b id="streak">0</b> · Best <b id="best">0</b></div></div>
+    <div class="modebar"><button class="sprintbtn" id="sprintBtn" aria-pressed="false">Beat the clock · 60s</button><span class="timer" id="timer" hidden>60</span></div>
     <div class="board">
       <div id="bPlay" style="display:contents">
         <p class="prompt" id="bPrompt"></p>
@@ -147,7 +168,9 @@ svg.bond{width:100%;max-width:300px;height:auto;overflow:visible}
       <div class="target" id="target"><small>Make</small><strong id="tNum">10</strong></div>
       <p class="prompt">Use all 4 numbers. Tap a number, a sign, then another number.</p>
       <div class="nums" id="nums"></div>
+      <p class="eqline" id="eqline"></p>
       <p class="steps" id="steps"></p>
+      <p class="rule" id="rule" hidden>Parentheses show what to do first. Without them, × and ÷ come before + and −.</p>
     </div>
     <div class="ops" id="ops">
       <button data-op="+">+</button><button data-op="-">−</button><button data-op="*">×</button><button data-op="/">÷</button>
@@ -160,6 +183,21 @@ svg.bond{width:100%;max-width:300px;height:auto;overflow:visible}
       <button class="link" id="skip">New puzzle</button>
     </div>
   </section>
+
+  <!-- ARRAYS -->
+  <section class="game" id="arrGame" hidden>
+    <div class="ctl"><span class="lbl">Grade</span><div class="pills" id="aGrades"><button data-g="2">2</button><button data-g="3">3</button><button data-g="4">4</button></div></div>
+    <div class="top"><p class="note" id="aNote"></p><div class="stats">Solved <b id="aSolved">0</b></div></div>
+    <div class="board">
+      <p class="prompt" id="aPrompt"></p>
+      <div class="grid" id="grid"></div>
+      <p class="eqline" id="aEq"></p>
+      <div class="found" id="found"></div>
+    </div>
+    <div class="choices" id="aChoices"></div>
+    <p class="msg" id="aMsg" aria-live="polite"></p>
+    <div class="row"><button class="link" id="aHint">Show a hint</button><button class="link" id="aSkip">New puzzle</button></div>
+  </section>
 </main>
 
 <script>
@@ -171,11 +209,12 @@ const cheers=["Nice!","You got it!","Super!","Great thinking!","Yes!"];
 const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- tabs ---------- */
-function showTab(b){
-  $('tabBonds').setAttribute('aria-selected',b);$('tabMake').setAttribute('aria-selected',!b);
-  $('bondsGame').hidden=!b;$('makeGame').hidden=b;
+const TABS=[['tabBonds','bondsGame'],['tabMake','makeGame'],['tabArr','arrGame']];
+function showTab(id){
+  TABS.forEach(([t,g])=>{$(t).setAttribute('aria-selected',t===id);$(g).hidden=t!==id});
+  if(id!=='tabBonds'&&sprint){sprint=false;startRound()}
 }
-$('tabBonds').onclick=()=>showTab(true);$('tabMake').onclick=()=>showTab(false);
+TABS.forEach(([t])=>$(t).onclick=()=>showTab(t));
 
 /* ---------- formatting (all values are whole "units") ---------- */
 const fInt=n=>String(n);
@@ -206,8 +245,18 @@ $('bGrades').innerHTML=GRADES.map(g=>`<button data-g="${g}">${g}</button>`).join
 document.querySelectorAll('#bGrades button').forEach(b=>b.onclick=()=>{bg=b.dataset.g;bl=1;store.set('nb-g',bg);store.set('nb-l',bl);startRound()});
 document.querySelectorAll('#bLevels button').forEach(b=>b.onclick=()=>{bl=+b.dataset.l;store.set('nb-l',bl);startRound()});
 
+let sprint=false,sScore=0,tLeft=60,timerId=null;
+const sKey=()=>`nb-sprint-${bg}-${bl}`;
+function paintStats(){
+  $('sLbl').textContent=sprint?'Score':'Streak';$('streak').textContent=sprint?sScore:streak;
+  $('best').textContent=sprint?store.get(sKey(),0):best;
+}
 function startRound(){
-  round=[];streak=0;$('streak').textContent=0;$('bPlay').style.display='contents';$('bEnd').hidden=true;
+  round=[];streak=0;sScore=0;$('bPlay').style.display='contents';$('bEnd').hidden=true;
+  clearInterval(timerId);$('timer').hidden=!sprint;$('progress').hidden=sprint;
+  $('sprintBtn').setAttribute('aria-pressed',sprint);$('sprintBtn').textContent=sprint?'Stop the clock':'Beat the clock · 60s';
+  if(sprint){tLeft=60;$('timer').textContent=tLeft;timerId=setInterval(()=>{tLeft--;$('timer').textContent=tLeft;if(tLeft<=0)finishSprint()},1000)}
+  paintStats();
   document.querySelectorAll('#bGrades button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.g===bg));
   document.querySelectorAll('#bLevels button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.l===bl));
   $('bNote').textContent=BONDS[bg][bl].note;nextBond();
@@ -237,7 +286,7 @@ function choicesFor(){
 function setText(id,str,isQ){const t=$(id);t.textContent=str;t.setAttribute('class',isQ?'q':'');
   const L=str.length;t.style.fontSize=(L<=2?40:L===3?34:L===4?28:22)+'px'}
 function nextBond(){
-  if(round.length>=ROUND)return finishBonds();
+  if(!sprint&&round.length>=ROUND)return finishBonds();
   locked=false;missed=false;q=makeQ();
   $('bond').classList.remove('win','shake');$('eq').classList.remove('win');
   [['cW','tW','w','w'],['cA','tA','a','p'],['cB','tB','b','p']].forEach(([c,t,k,role])=>{
@@ -280,17 +329,20 @@ function pickBond(v,btn){
     locked=true;btn.classList.add('yes');
     setText({w:'tW',a:'tA',b:'tB'}[q.hide],q.fmt(q.ans),true);$('bond').classList.add('win');
     $('eq').innerHTML=eqHTML(true);$('eq').classList.add('win');
-    round.push(missed?'miss':'done');
-    if(!missed){streak++;if(streak>best){best=streak;store.set('nb-best2',best)}}else streak=0;
     const f=q.fmt;
-    $('bMsg').textContent=`${pick(cheers)}  ${f(q.a)} + ${f(q.b)} = ${f(q.W)}, so ${f(q.W)} − ${f(q.a)} = ${f(q.b)}`;
-    paintProgress();setTimeout(nextBond,1500);
+    if(sprint){sScore++;$('bMsg').textContent=pick(cheers);setTimeout(()=>{if(sprint&&tLeft>0)nextBond()},450)}
+    else{
+      round.push(missed?'miss':'done');
+      if(!missed){streak++;if(streak>best){best=streak;store.set('nb-best2',best)}}else streak=0;
+      $('bMsg').textContent=`${pick(cheers)}  ${f(q.a)} + ${f(q.b)} = ${f(q.W)}, so ${f(q.W)} − ${f(q.a)} = ${f(q.b)}`;
+      paintProgress();setTimeout(nextBond,1500);
+    }
   }else{
     missed=true;btn.classList.add('no');btn.disabled=true;
     $('bond').classList.remove('shake');void $('bond').getBoundingClientRect();$('bond').classList.add('shake');
     $('bMsg').textContent='Not quite. Try again, or tap Show a hint.';
   }
-  $('streak').textContent=streak;$('best').textContent=best;
+  paintStats();
 }
 function paintProgress(){let h='';for(let i=0;i<ROUND;i++)h+=`<span class="${round[i]||''}"></span>`;$('progress').innerHTML=h}
 function finishBonds(){
@@ -300,7 +352,16 @@ function finishBonds(){
   const up=first>=9?(bl===1?' Ready for Level 2.':bg!=='5'?' Ready for the next grade.':''):'';
   $('bEndMsg').textContent=(first===ROUND?'Perfect round!':first>=7?'Strong work!':'Good practice. Each round gets faster.')+' Right on the first try.'+up;
 }
+function finishSprint(){
+  clearInterval(timerId);locked=true;
+  const k=sKey(),prev=store.get(k,0),nb=sScore>prev;if(nb)store.set(k,sScore);
+  $('bPlay').style.display='none';$('bEnd').hidden=false;$('choices').innerHTML='';$('bMsg').textContent='';
+  $('bScore').textContent=`${sScore} in 60 seconds`;
+  $('bEndMsg').textContent=nb?(prev?`New best! Your old best was ${prev}.`:'That is your first score. Now try to beat it!'):`Your best is ${prev}. Keep going!`;
+  paintStats();
+}
 $('bAgain').onclick=startRound;
+$('sprintBtn').onclick=()=>{sprint=!sprint;startRound()};
 
 /* ---------- MAKE THE NUMBER: Grades 1-2 and Grades 3-5 ---------- */
 const MAKE={
@@ -314,6 +375,13 @@ let mg=String(store.get('mn-g','2')), solved=store.get('mn-solved',0), puzzle=nu
 if(!MAKE[mg])mg='2';
 const sym={'+':'+','-':'−','*':'×','/':'÷'};
 function apply(a,o,b){return o==='+'?a+b:o==='-'?a-b:o==='*'?a*b:(b!==0&&a%b===0?a/b:null)}
+// Build an expression with only the parentheses that order of operations needs.
+const PREC={'+':1,'-':1,'*':2,'/':2};
+function join(A,o,B){
+  const p=PREC[o], l=A.p<p?`(${A.e})`:A.e;
+  const r=(B.p<p||(B.p===p&&(o==='-'||o==='/')))?`(${B.e})`:B.e;
+  return {e:`${l} ${sym[o]} ${r}`,p};
+}
 document.querySelectorAll('#mBands button').forEach(b=>b.onclick=()=>{mg=b.dataset.band==='lo'?'2':'3';store.set('mn-g',mg);newPuzzle()});
 function paintMakeControls(){
   const band=MAKE[mg].band;
@@ -323,12 +391,13 @@ function paintMakeControls(){
   $('mNote').textContent=MAKE[mg].note;
   document.querySelectorAll('#ops button').forEach(b=>b.hidden=!MAKE[mg].ops.includes(b.dataset.op));
   $('target').querySelector('small').textContent=mg==='5'?'Make 24':'Make';
+  $('rule').hidden=MAKE[mg].band!=='hi';
 }
 function newPuzzle(){
   const c=MAKE[mg];paintMakeControls();
   for(let tries=0;tries<20000;tries++){
     const ns=Array.from({length:4},()=>c.nums[0]+rnd(c.nums[1]-c.nums[0]+1));
-    let pool=ns.map(v=>({v,e:String(v),c:false})), way=[], used=[], ok=true;
+    let pool=ns.map(v=>({v,e:String(v),p:3})), way=[], used=[], ok=true;
     while(pool.length>1){
       const i=rnd(pool.length);let j=rnd(pool.length-1);if(j>=i)j++;
       let A=pool[i],B=pool[j];const o=pick(c.ops);
@@ -336,8 +405,7 @@ function newPuzzle(){
       const r=apply(A.v,o,B.v);
       if(r===null||r<0||(o==='*'&&(A.v===1||B.v===1))||(o==='/'&&B.v===1)){ok=false;break}
       used.push(o);way.push(`${A.v} ${sym[o]} ${B.v} = ${r}`);
-      const e=(A.c?`(${A.e})`:A.e)+` ${sym[o]} `+(B.c?`(${B.e})`:B.e);
-      pool=pool.filter((_,k)=>k!==i&&k!==j);pool.push({v:r,e,c:true});
+      pool=pool.filter((_,k)=>k!==i&&k!==j);pool.push({v:r,...join(A,o,B)});
     }
     if(!ok)continue;
     const t=pool[0].v;
@@ -348,7 +416,7 @@ function newPuzzle(){
   resetTiles();
 }
 function resetTiles(){
-  tiles=puzzle.ns.map(v=>({v,e:String(v),c:false,gone:false,isNew:false}));hist=[];sel=null;op=null;done=false;
+  tiles=puzzle.ns.map(v=>({v,e:String(v),p:3,gone:false,isNew:false}));$('eqline').classList.remove('win');hist=[];sel=null;op=null;done=false;
   $('tNum').textContent=puzzle.t;$('target').classList.remove('win');$('mMsg').textContent='';renderTiles();
 }
 function renderTiles(){
@@ -360,6 +428,12 @@ function renderTiles(){
   });
   document.querySelectorAll('#ops button').forEach(b=>b.classList.toggle('sel',b.dataset.op===op));
   $('steps').textContent=hist.map(h=>h.line).join('   ');
+  const left=tiles.filter(t=>!t.gone), groups=left.filter(t=>t.p<3);
+  let h;
+  if(!groups.length)h=`<span class="dim">? =</span> <span class="t">${puzzle.t}</span>`;
+  else if(left.length===1)h=`${left[0].e} = <span class="t">${left[0].v}</span>`;
+  else h=groups.map(g=>`${g.e} = ${g.v}`).join('<span class="dim"> · </span>');
+  $('eqline').innerHTML=h;
 }
 function tapNum(i){
   if(done)return;
@@ -368,13 +442,12 @@ function tapNum(i){
   if(r===null){say(`${A.v} ÷ ${B.v} doesn't come out even. Try another way.`,true);return}
   if(r<0){say(`${A.v} − ${B.v} goes below zero. Try the bigger number first.`,true);return}
   hist.push({snap:JSON.stringify(tiles),line:`${A.v} ${sym[op]} ${B.v} = ${r}`});
-  const e=(A.c?`(${A.e})`:A.e)+` ${sym[op]} `+(B.c?`(${B.e})`:B.e);
-  tiles[sel]={...A,gone:true};tiles[i]={v:r,e,c:true,gone:false,isNew:true};
+  tiles[sel]={...A,gone:true};tiles[i]={v:r,...join(A,op,B),gone:false,isNew:true};
   sel=null;op=null;$('mMsg').textContent='';
   const left=tiles.filter(t=>!t.gone);renderTiles();
   if(left.length===1){
     if(left[0].v===puzzle.t){done=true;solved++;store.set('mn-solved',solved);$('solved').textContent=solved;
-      $('target').classList.add('win');say(`${pick(cheers)} ${left[0].e} = ${puzzle.t}`);setTimeout(newPuzzle,2600)}
+      $('target').classList.add('win');$('eqline').classList.add('win');say(`${pick(cheers)} You made ${puzzle.t}!`);setTimeout(newPuzzle,2600)}
     else say(`That makes ${left[0].v}, not ${puzzle.t}. Tap Undo and try a different sign.`,true);
   }
 }
@@ -389,7 +462,88 @@ $('restart').onclick=()=>{if(!done)resetTiles()};
 $('showWay').onclick=()=>{$('mMsg').textContent=(mg>='3'?`One way: ${puzzle.expr} = ${puzzle.t}`:'One way: '+puzzle.way.join(', then '))};
 $('skip').onclick=newPuzzle;
 
+/* ---------- ARRAYS: grades 2-4 ---------- */
+const ARR={
+  2:{note:'Grade 2: count arrays up to 5 by 5 with repeated addition (2.OA.4).'},
+  3:{note:'Grade 3: build the array for a multiplication fact (3.OA.1, 3.OA.3).'},
+  4:{note:'Grade 4: find every array, and every factor pair, for a number (4.OA.4).'}
+};
+let ag=String(store.get('ar-g','3')), aSolved=store.get('ar-solved',0), ap=null, cur={r:0,c:0}, aDone=false;
+if(!ARR[ag])ag='3';
+document.querySelectorAll('#aGrades button').forEach(b=>b.onclick=()=>{ag=b.dataset.g;store.set('ar-g',ag);newArr()});
+const cells=[];
+for(let i=0;i<100;i++){const s=document.createElement('span');s.dataset.r=Math.floor(i/10)+1;s.dataset.c=i%10+1;cells.push(s);$('grid').appendChild(s)}
+function paintGrid(r,c,pr,pc){cells.forEach(s=>{const R=+s.dataset.r,C=+s.dataset.c;s.className=(R<=r&&C<=c)?'on':(pr&&R<=pr&&C<=pc)?'pv':''})}
+const pairsOf=(n,max)=>{const p=[];for(let a=1;a*a<=n;a++)if(n%a===0&&n/a<=max)p.push([a,n/a]);return p};
+function paintFound(){
+  $('found').innerHTML=ap.pairs.map(([a,b])=>{const g=ap.got.has(a+'x'+b);return `<span class="${g?'got':''}">${g?`${a} × ${b}`:'? × ?'}</span>`}).join('');
+}
+function newArr(){
+  aDone=false;cur={r:0,c:0};$('grid').classList.remove('win');$('aEq').classList.remove('win');
+  $('aMsg').textContent='';$('aChoices').innerHTML='';$('found').innerHTML='';
+  document.querySelectorAll('#aGrades button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.g===ag));
+  $('aNote').textContent=ARR[ag].note;$('grid').style.pointerEvents=ag==='2'?'none':'';
+  if(ag==='2'){
+    const r=2+rnd(4),c=2+rnd(4);ap={r,c,n:r*c};paintGrid(r,c);
+    $('aPrompt').textContent=`${r} rows of ${c}. How many dots?`;
+    $('aEq').innerHTML=Array(r).fill(c).join(' + ')+' = <span class="t">?</span>';
+    const o=new Set([ap.n]);for(const d of shuffle([1,-1,2,-2,c,-c,r,-r]))if(o.size<4&&ap.n+d>0)o.add(ap.n+d);
+    [...o].sort((x,y)=>x-y).forEach(v=>{const b=document.createElement('button');b.textContent=v;b.onclick=()=>pickArr(v,b);$('aChoices').appendChild(b)});
+  }else if(ag==='3'){
+    const r=2+rnd(8),c=2+rnd(8);ap={r,c,n:r*c};paintGrid(0,0);
+    $('aPrompt').textContent=`Build ${r} × ${c}, which is ${r} rows of ${c}. Drag or tap to set the corner.`;
+    $('aEq').innerHTML=`${r} × ${c} = <span class="t">?</span>`;
+  }else{
+    const n=pick([6,8,10,12,16,18,20,24,30,36,40]);ap={n,pairs:pairsOf(n,10),all:pairsOf(n,n),got:new Set()};paintGrid(0,0);
+    $('aPrompt').textContent=`Make an array with exactly ${n} dots. Find every shape that fits.`;
+    $('aEq').innerHTML=`? × ? = <span class="t">${n}</span>`;paintFound();
+  }
+}
+function winArr(eq,msg){
+  aDone=true;$('grid').classList.add('win');$('aEq').innerHTML=eq;$('aEq').classList.add('win');
+  $('aMsg').textContent=pick(cheers)+' '+msg;aSolved++;store.set('ar-solved',aSolved);$('aSolved').textContent=aSolved;
+  setTimeout(newArr,3200);
+}
+function pickArr(v,b){
+  if(aDone)return;
+  if(v===ap.n){b.classList.add('yes');winArr(`${Array(ap.r).fill(ap.c).join(' + ')} = <span class="t">${ap.n}</span>`,`${ap.r} rows of ${ap.c} is ${ap.r} × ${ap.c} = ${ap.n}.`)}
+  else{b.classList.add('no');b.disabled=true;$('aMsg').textContent='Not quite. Count one row, then keep adding rows.'}
+}
+function checkArr(){
+  const {r,c}=cur,n=r*c;
+  if(ag==='3'){
+    if(r===ap.r&&c===ap.c)winArr(`${r} × ${c} = <span class="t">${n}</span>`,`${r} rows of ${c} is ${n}, so ${n} ÷ ${r} = ${c}.`);
+    else if(r===ap.c&&c===ap.r)winArr(`${r} × ${c} = <span class="t">${n}</span>`,`You made ${r} rows of ${c}, which is also ${n}. Turning an array doesn't change the total.`);
+    else $('aMsg').textContent=`That's ${r} rows of ${c} = ${n}. You need ${ap.r} rows of ${ap.c}.`;
+  }else if(ag==='4'){
+    if(n!==ap.n){$('aMsg').textContent=`${r} × ${c} = ${n}. You need ${ap.n}, so make it ${n<ap.n?'bigger':'smaller'}.`;return}
+    const a=Math.min(r,c),b=Math.max(r,c),k=a+'x'+b;
+    if(ap.got.has(k)){$('aMsg').textContent=`You already found ${a} × ${b}. Try a different shape.`;return}
+    ap.got.add(k);paintFound();$('aEq').innerHTML=`${r} × ${c} = <span class="t">${n}</span>`;
+    if(ap.got.size===ap.pairs.length)winArr(`${r} × ${c} = <span class="t">${n}</span>`,`You found them all! Every factor pair of ${ap.n}: ${ap.all.map(([x,y])=>x+' × '+y).join(', ')}.`);
+    else $('aMsg').textContent=`Yes! ${ap.pairs.length-ap.got.size} more to find.`;
+  }
+}
+function cellAt(e){const el=document.elementFromPoint(e.clientX,e.clientY);return el&&el.parentNode===$('grid')?el:null}
+$('grid').addEventListener('pointermove',e=>{
+  if(aDone||ag==='2')return;const s=cellAt(e);if(!s)return;
+  const r=+s.dataset.r,c=+s.dataset.c;paintGrid(cur.r,cur.c,r,c);
+  $('aMsg').textContent=`${r} ${r===1?'row':'rows'} of ${c} = ${r*c} dots`;
+});
+$('grid').addEventListener('pointerleave',()=>{if(!aDone)paintGrid(cur.r,cur.c)});
+$('grid').addEventListener('pointerup',e=>{
+  if(aDone||ag==='2')return;const s=cellAt(e);if(!s)return;
+  cur={r:+s.dataset.r,c:+s.dataset.c};paintGrid(cur.r,cur.c);checkArr();
+});
+$('aHint').onclick=()=>{
+  if(ag==='2')$('aMsg').textContent=`Count by ${ap.c}s: ${Array.from({length:ap.r},(_,i)=>(i+1)*ap.c).join(', ')}.`;
+  else if(ag==='3')$('aMsg').textContent=`Go down ${ap.r} rows, then across ${ap.c} dots. Tap that dot.`;
+  else $('aMsg').textContent=`Try rows of 2, 3, 4 and more. Does ${ap.n} split into equal rows with nothing left over?`;
+};
+$('aSkip').onclick=newArr;
+
 /* ---------- boot ---------- */
+$('aSolved').textContent=aSolved;newArr();
 $('best').textContent=best;$('solved').textContent=solved;
 startRound();newPuzzle();
 </script>
