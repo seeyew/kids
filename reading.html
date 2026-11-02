@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reading Sprints</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@500;700&family=Andika:wght@400;700&display=swap">
+<style>
+/* Layout: one play column. Skill tabs, grade pills, a white board, big tap targets. Andika is a typeface made for early readers. */
+:root{
+  --bg:#f3f0f7; --card:#ffffff; --ink:#24213a; --muted:#6a6580;
+  --accent:#6a4fd1; --warm:#e0603f; --good:#1f9d6b; --line:#d6d0e2; --tile:#f8f6fb;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,sans-serif;
+  --read:"Andika","Century Gothic","Trebuchet MS",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#17151f; --card:#221f2e; --ink:#eeebf7; --muted:#a9a3bd;
+  --accent:#a18cf2; --warm:#f08466; --good:#43c493; --line:#3a3550; --tile:#2a2639; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17151f; --card:#221f2e; --ink:#eeebf7; --muted:#a9a3bd;
+  --accent:#a18cf2; --warm:#f08466; --good:#43c493; --line:#3a3550; --tile:#2a2639; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px}
+main{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;background:var(--card);padding:5px;border-radius:16px}
+.tabs button{flex:1 1 30%;font:800 .95rem var(--display);padding:8px 4px;border-radius:12px;border:none;background:none;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--card)}
+.game{display:flex;flex-direction:column;gap:12px}
+.ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lbl{font-weight:700;color:var(--muted);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;min-width:3.4rem}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pills button{font:800 1rem var(--display);min-width:42px;padding:5px 12px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.pills button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--card)}
+.note{margin:0;color:var(--muted);font-size:.9rem}
+.board{background:var(--card);border-radius:20px;padding:18px 14px 16px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.prompt{margin:0;color:var(--muted);font-weight:700;text-align:center;text-wrap:balance}
+.msg{min-height:1.4em;text-align:center;font-weight:700;margin:0;text-wrap:balance}
+.link{font:700 .9rem var(--body);color:var(--muted);background:none;border:none;text-decoration:underline;cursor:pointer;padding:4px}
+.big{font:800 1.15rem var(--display);padding:10px 24px;border-radius:14px;border:none;background:var(--accent);color:var(--card);cursor:pointer}
+.row{display:flex;gap:14px;justify-content:center;align-items:center;flex-wrap:wrap}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.stats{font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.stats b{color:var(--ink)}
+.speak{font:800 1.1rem var(--display);padding:12px 22px;border-radius:999px;border:3px solid var(--accent);background:var(--tile);color:var(--accent);cursor:pointer}
+.choices{display:grid;grid-template-columns:repeat(var(--cols,4),1fr);gap:10px;width:100%}
+.choices button{font:700 2.1rem var(--read);padding:10px 0;border-radius:16px;border:3px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;touch-action:manipulation}
+.choices.words button{font-size:1.3rem;padding:12px 6px}
+.choices button.no{border-color:var(--warm);color:var(--warm);opacity:.55}
+.choices button.yes{border-color:var(--good);background:var(--good);color:var(--card)}
+.shown{font:700 3rem/1.1 var(--read);margin:0}
+.boxes{display:flex;gap:8px;justify-content:center;min-height:60px}
+.boxes span{min-width:54px;height:56px;padding:0 8px;display:grid;place-items:center;border:3px solid var(--accent);border-radius:10px;font:700 1.7rem var(--read);background:var(--tile)}
+.sentence{font:700 1.35rem/1.5 var(--read);text-align:center;margin:0;text-wrap:pretty}
+.sentence .blank{display:inline-block;min-width:4.5em;border-bottom:3px solid var(--accent);color:var(--good)}
+.progress{display:flex;gap:5px;justify-content:center}
+.progress span{width:20px;height:8px;border-radius:4px;background:var(--line)}
+.progress span.done{background:var(--good)}
+.progress span.miss{background:var(--warm)}
+
+/* Partner sheet: child reads aloud, a grown-up scores */
+.sheet{display:flex;flex-direction:column;gap:12px;width:100%}
+.sbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.timer{font:800 2rem/1 var(--display);font-variant-numeric:tabular-nums;color:var(--warm)}
+.items{transition:filter .2s}
+.items.veil{filter:blur(7px);pointer-events:none;user-select:none}
+.items.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--min,46px),1fr));gap:6px}
+.items.grid .it{font:700 1.6rem/1.2 var(--read);padding:6px 2px;border-radius:10px;border:2px solid var(--line);background:var(--tile);color:var(--ink);cursor:pointer;touch-action:manipulation}
+.items.grid.wordy{--min:84px}
+.items.grid.wordy .it{font-size:1.35rem}
+.items.text{font:400 1.3rem/1.9 var(--read);text-align:left}
+.items.text h3{font:700 1.3rem var(--read);margin:0 0 6px}
+.items.text .it{font:inherit;color:inherit;background:none;border:none;padding:0 1px;border-radius:5px;cursor:pointer;touch-action:manipulation}
+.it.err{background:var(--warm)!important;color:var(--card)!important;text-decoration:line-through}
+.it.last{outline:3px solid var(--accent);outline-offset:1px}
+.it.after{opacity:.35}
+.picking .it{box-shadow:inset 0 0 0 2px var(--accent)}
+.items.text.picking .it{box-shadow:none;text-decoration:underline dotted var(--accent)}
+.result{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;text-align:center}
+.result div{background:var(--tile);border-radius:12px;padding:8px 4px}
+.result b{display:block;font:800 1.8rem/1 var(--display);font-variant-numeric:tabular-nums}
+.result small{color:var(--muted);font-weight:700;font-size:.78rem}
+.guide{margin:0;padding:10px 12px;border-radius:12px;background:var(--tile);color:var(--muted);font-size:.9rem}
+.guide b{color:var(--ink)}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){.shake{animation:none}.items{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="letters" aria-selected="true">Letters</button>
+    <button role="tab" data-tab="sounds" aria-selected="false">Sounds</button>
+    <button role="tab" data-tab="madeup" aria-selected="false">Made-up Words</button>
+    <button role="tab" data-tab="blank" aria-selected="false">Fill the Blank</button>
+    <button role="tab" data-tab="aloud" aria-selected="false">Read Aloud</button>
+  </div>
+
+  <!-- LETTERS -->
+  <section class="game" id="letters">
+    <div class="ctl"><span class="lbl">Grade</span><div class="pills" id="lGrades"><button data-g="K">K</button><button data-g="1">1</button></div></div>
+    <div class="ctl"><span class="lbl">Mode</span><div class="pills" id="lModes"><button data-m="find">Find it</button><button data-m="sprint">Sprint · 1 min</button><button data-m="read">With a grown-up</button></div></div>
+    <p class="note" id="lNote"></p>
+    <div class="board" id="lFind">
+      <div class="sbar" id="lSbar" hidden style="width:100%"><span class="timer" id="lTimer">60</span><span class="stats">Score <b id="lScore">0</b> · Best <b id="lBest">0</b></span></div>
+      <p class="prompt" id="lPrompt">Listen, then tap the letter you hear.</p>
+      <button class="speak" id="lSay">🔊 Hear it again</button>
+      <p class="shown" id="lShown" hidden></p>
+      <div class="choices" id="lChoices"></div>
+      <p class="msg" id="lMsg" aria-live="polite"></p>
+      <button class="big" id="lAgain" hidden>Play again</button>
+      <div class="progress" id="lProg"></div>
+    </div>
+    <div class="board" id="lSheet" hidden></div>
+  </section>
+
+  <!-- SOUNDS -->
+  <section class="game" id="sounds" hidden>
+    <div class="ctl"><span class="lbl">Grade</span><div class="pills" id="sGrades"><button data-g="K">K</button><button data-g="1">1</button></div></div>
+    <p class="note" id="sNote"></p>
+    <div class="board">
+      <p class="prompt">Listen to the word. How many sounds do you hear?</p>
+      <button class="speak" id="sSay">🔊 Hear the word</button>
+      <p class="shown" id="sShown" hidden></p>
+      <div class="boxes" id="sBoxes"></div>
+      <div class="choices" id="sChoices" style="--cols:4"></div>
+      <p class="msg" id="sMsg" aria-live="polite"></p>
+      <div class="progress" id="sProg"></div>
+    </div>
+    <p class="guide"><b>Tip:</b> Say the word slowly together and hold up a finger for each sound. "Ship" has 3 sounds: sh · i · p.</p>
+  </section>
+
+  <!-- MADE-UP WORDS -->
+  <section class="game" id="madeup" hidden>
+    <div class="ctl"><span class="lbl">Grade</span><div class="pills" id="mGrades"><button data-g="1">K–1</button><button data-g="2">2</button><button data-g="3">3</button></div></div>
+    <div class="ctl"><span class="lbl">Mode</span><div class="pills" id="mModes"><button data-m="sort">Real or made-up?</button><button data-m="read">With a grown-up</button></div></div>
+    <p class="note" id="mNote"></p>
+    <div class="board" id="mSort">
+      <p class="prompt">Sound it out. Is it a real word or a made-up word?</p>
+      <p class="shown" id="mWord"></p>
+      <div class="choices words" id="mChoices" style="--cols:2"><button data-a="real">Real word</button><button data-a="fake">Made-up</button></div>
+      <p class="msg" id="mMsg" aria-live="polite"></p>
+      <div class="progress" id="mProg"></div>
+    </div>
+    <div class="board" id="mSheet"></div>
+    <p class="guide" id="mGuide"><b>For the grown-up:</b> These are made-up words, so your child has to sound them out instead of guessing from memory. Count a word as right if they say it correctly, either as a whole word or sound by sound. Praise careful reading over speed.</p>
+  </section>
+
+  <!-- FILL THE BLANK -->
+  <section class="game" id="blank" hidden>
+    <div class="ctl"><span class="lbl">Grade</span><div class="pills" id="bGrades"><button data-g="2">2–3</button><button data-g="4">4–5</button></div></div>
+    <p class="note" id="bNote"></p>
+    <div class="board">
+      <p class="prompt">Which word makes sense?</p>
+      <p class="sentence" id="bSentence"></p>
+      <div class="choices words" id="bChoices" style="--cols:3"></div>
+      <p class="msg" id="bMsg" aria-live="polite"></p>
+      <div class="progress" id="bProg"></div>
+    </div>
+  </section>
+
+  <!-- READ ALOUD -->
+  <section class="game" id="aloud" hidden>
+    <div class="ctl"><span class="lbl">Grade</span><div class="pills" id="aGrades"><button data-g="1">1</button><button data-g="2">2</button><button data-g="3">3</button><button data-g="4">4</button><button data-g="5">5</button></div></div>
+    <div class="ctl"><span class="lbl">Mode</span><div class="pills" id="aModes"><button data-m="solo">Read &amp; answer</button><button data-m="read">With a grown-up</button></div></div>
+    <p class="note" id="aNote"></p>
+    <div class="board" id="aSolo">
+      <div class="sbar" style="width:100%"><span class="timer" id="aClock">0:00</span><span class="stats">Best <b id="aBest">–</b> words a minute</span></div>
+      <p class="prompt" id="aSP"></p>
+      <button class="big" id="aGo">Start reading</button>
+      <div class="items text veil" id="aText" style="width:100%"></div>
+      <div id="aQ" hidden style="width:100%;display:flex;flex-direction:column;gap:10px;align-items:center">
+        <p class="prompt" id="aQNum"></p>
+        <p class="sentence" id="aQText"></p>
+        <div class="choices words" id="aQChoices" style="--cols:1"></div>
+        <p class="msg" id="aQMsg" aria-live="polite"></p>
+      </div>
+      <div class="result" id="aRes" hidden></div>
+      <div class="row"><button class="big" id="aDone" hidden>I'm done</button><button class="link" id="aLook" hidden>Look back at the story</button><button class="link" id="aNew">New story</button></div>
+    </div>
+    <div class="board" id="aSheet"></div>
+    <p class="guide" id="aGuide"><b>For the grown-up:</b> Tap any word they skip or misread. If they fix a mistake on their own within a few seconds, tap it again to count it right. After the story, ask "What happened first? What was your favorite part?" Understanding matters as much as speed.</p>
+  </section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const rnd=n=>Math.floor(Math.random()*n);
+const pick=a=>a[rnd(a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+const cheers=["Nice!","You got it!","Super!","Great reading!","Yes!"];
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const canSpeak='speechSynthesis' in window;
+function say(text){
+  if(!canSpeak)return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=.8;u.lang='en-US';speechSynthesis.speak(u)}catch(e){}
+}
+function paintProg(el,arr,n){let h='';for(let i=0;i<n;i++)h+=`<span class="${arr[i]||''}"></span>`;el.innerHTML=h}
+function setPills(id,attr,val){document.querySelectorAll(`#${id} button`).forEach(b=>b.setAttribute('aria-pressed',b.dataset[attr]===val))}
+
+/* ---------- tabs ---------- */
+const tabs=[...document.querySelectorAll('.tabs button')];
+tabs.forEach(t=>t.onclick=()=>{
+  tabs.forEach(x=>{x.setAttribute('aria-selected',x===t);$(x.dataset.tab).hidden=x!==t});
+  Object.values(sheets).forEach(s=>s.halt());
+  clearInterval(lTimer);if(t.dataset.tab==='letters'&&lm==='sprint')lStart();
+});
+
+/* ---------- partner sheet: one-minute read-aloud, scored by a grown-up ---------- */
+const sheets={};
+function makeSheet(root,opt){
+  let items=[],errs=new Set(),state='idle',t=60,timer=null,elapsed=60;
+  root.innerHTML=`<div class="sheet">
+    <div class="sbar"><span class="timer">60</span><span class="stats">Best <b class="best">–</b> ${opt.unit} a minute</span></div>
+    <p class="prompt sp"></p>
+    <div class="items ${opt.layout} veil"></div>
+    <div class="result" hidden></div>
+    <div class="row"><button class="big go">Start 1 minute</button><button class="link early" hidden>They finished</button><button class="link fresh">New ${opt.layout==='text'?'story':'sheet'}</button></div>
+  </div>`;
+  const q=s=>root.querySelector(s), box=q('.items'), sp=q('.sp');
+  function idleText(){sp.textContent='When your child is ready, tap Start. They read aloud while you tap anything they miss.'}
+  function load(){
+    halt(true);const data=opt.getItems();items=data.items;errs=new Set();state='idle';t=60;
+    q('.timer').textContent=60;q('.result').hidden=true;q('.go').hidden=false;q('.early').hidden=true;
+    box.className=`items ${opt.layout} veil`;box.innerHTML=(data.title?`<h3>${data.title}</h3>`:'')+items.map((w,i)=>`<button class="it" data-i="${i}">${w}</button>`).join(opt.layout==='text'?' ':'');
+    q('.best').textContent=store.get(opt.key(),'–');idleText();
+  }
+  function start(){
+    state='run';box.classList.remove('veil');q('.go').hidden=true;q('.early').hidden=false;
+    sp.textContent='Reading! Tap anything they skip or misread.';
+    const t0=Date.now();
+    timer=setInterval(()=>{t=60-Math.floor((Date.now()-t0)/1000);q('.timer').textContent=Math.max(t,0);if(t<=0)timeUp()},250);
+  }
+  function timeUp(){clearInterval(timer);elapsed=60;state='last';q('.early').hidden=true;box.classList.add('picking');sp.textContent='Time! Tap the last one they read.'}
+  function early(){clearInterval(timer);elapsed=Math.max(5,60-t);finish(items.length-1)}
+  function finish(last){
+    state='done';box.classList.remove('picking');q('.early').hidden=true;
+    box.querySelectorAll('.it').forEach((b,i)=>{b.classList.toggle('after',i>last);b.classList.toggle('last',i===last)});
+    const att=last+1, miss=[...errs].filter(i=>i<=last).length, right=att-miss;
+    const rate=Math.round(right*60/elapsed), acc=att?Math.round(100*right/att):0;
+    const k=opt.key(), prev=store.get(k,0); if(rate>prev)store.set(k,rate); q('.best').textContent=Math.max(rate,prev);
+    const r=q('.result');r.hidden=false;
+    r.innerHTML=`<div><b>${rate}</b><small>${opt.unit} correct a minute</small></div><div><b>${acc}%</b><small>accurate</small></div><div><b>${miss}</b><small>to practice</small></div>`;
+    const missed=[...errs].filter(i=>i<=last).map(i=>items[i].replace(/[^A-Za-z'-]/g,''));
+    sp.textContent=(rate>prev&&prev?`New best! Up from ${prev}. `:'')+(acc>=95?'Very accurate reading. ':acc>=90?'Good accuracy. ':'Slow down a little and get each one right. ')+(missed.length?`Practice: ${[...new Set(missed)].slice(0,8).join(', ')}`:'');
+  }
+  box.addEventListener('click',e=>{
+    const b=e.target.closest('.it');if(!b)return;const i=+b.dataset.i;
+    if(state==='run'){errs.has(i)?errs.delete(i):errs.add(i);b.classList.toggle('err')}
+    else if(state==='last')finish(i);
+  });
+  function halt(silent){clearInterval(timer);if(!silent&&state==='run')load()}
+  q('.go').onclick=start;q('.early').onclick=early;q('.fresh').onclick=load;
+  return {load,halt};
+}
+
+/* ---------- LETTERS ---------- */
+const UP='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), LO=UP.map(c=>c.toLowerCase());
+let lg=store.get('rd-lg','K'), lm=store.get('rd-lm','find'), lQ=null, lRound=[], lMissed=false, lLock=false;
+const LNOTE={K:'Kindergarten: know the names of capital and lowercase letters.',1:'Grade 1: name letters quickly and easily, in any order.'};
+let lTimer=null,lT=60,lScore=0;
+function lStart(){
+  clearInterval(lTimer);
+  setPills('lGrades','g',lg);setPills('lModes','m',lm);$('lNote').textContent=LNOTE[lg];
+  $('lFind').hidden=lm==='read';$('lSheet').hidden=lm!=='read';
+  $('lSbar').hidden=lm!=='sprint';$('lProg').hidden=lm==='sprint';$('lAgain').hidden=true;
+  if(lm==='read'){sheets.letters.load();return}
+  lRound=[];lScore=0;$('lScore').textContent=0;$('lBest').textContent=store.get('rd-lsp-'+lg,0);$('lMsg').textContent='';
+  if(lm==='sprint'){
+    lT=60;$('lTimer').textContent=60;const t0=Date.now();
+    lTimer=setInterval(()=>{lT=60-Math.floor((Date.now()-t0)/1000);$('lTimer').textContent=Math.max(lT,0);if(lT<=0)lEnd()},250);
+  }
+  lNext();
+}
+function lEnd(){
+  clearInterval(lTimer);lLock=true;$('lChoices').innerHTML='';
+  const k='rd-lsp-'+lg,prev=store.get(k,0);if(lScore>prev)store.set(k,lScore);$('lBest').textContent=Math.max(prev,lScore);
+  $('lMsg').textContent=`Time! You found ${lScore} letters.`+(lScore>prev&&prev?` New best, up from ${prev}!`:'');$('lAgain').hidden=false;
+}
+$('lAgain').onclick=lStart;
+function lNext(){
+  if(lm==='find'&&lRound.length>=10){$('lMsg').textContent=`Round done: ${lRound.filter(x=>x==='done').length} of 10 on the first try. Here comes another!`;lRound=[]}
+  lLock=false;lMissed=false;
+  const n=lg==='K'?4:6, i=rnd(26);
+  const set=lg==='K'?UP:(Math.random()<.5?LO:UP);
+  const opts=shuffle([i,...shuffle([...Array(26).keys()].filter(k=>k!==i)).slice(0,n-1)]);
+  lQ={ans:set[i],opts:opts.map(k=>set[k])};
+  $('lChoices').style.setProperty('--cols',n===4?4:3);
+  $('lChoices').innerHTML='';
+  lQ.opts.forEach(c=>{const b=document.createElement('button');b.textContent=c;b.onclick=()=>lPick(c,b);$('lChoices').appendChild(b)});
+  if(canSpeak){$('lShown').hidden=true;say(lQ.ans.toUpperCase())}
+  else{$('lShown').hidden=false;$('lSay').hidden=true;$('lPrompt').textContent='Find the matching letter.';$('lShown').textContent=set===UP?lQ.ans.toLowerCase():lQ.ans.toUpperCase()}
+  paintProg($('lProg'),lRound,10);
+}
+function lPick(c,b){
+  if(lLock)return;
+  if(c===lQ.ans&&lm==='sprint'){lLock=true;b.classList.add('yes');lScore++;$('lScore').textContent=lScore;$('lMsg').textContent=pick(cheers);setTimeout(()=>{if(lT>0)lNext()},400);return}
+  if(c===lQ.ans){lLock=true;b.classList.add('yes');lRound.push(lMissed?'miss':'done');$('lMsg').textContent=`${pick(cheers)} That's ${c.toUpperCase()}${c!==c.toUpperCase()?` (lowercase ${c})`:''}.`;paintProg($('lProg'),lRound,10);setTimeout(lNext,1300)}
+  else{lMissed=true;b.classList.add('no');b.disabled=true;$('lMsg').textContent=`That's ${c.toUpperCase()}. Listen again.`;say(lQ.ans.toUpperCase())}
+}
+$('lSay').onclick=()=>say(lQ.ans.toUpperCase());
+document.querySelectorAll('#lGrades button').forEach(b=>b.onclick=()=>{lg=b.dataset.g;store.set('rd-lg',lg);lStart()});
+document.querySelectorAll('#lModes button').forEach(b=>b.onclick=()=>{lm=b.dataset.m;store.set('rd-lm',lm);lStart()});
+sheets.letters=makeSheet($('lSheet'),{layout:'grid',unit:'letters',key:()=>'rd-best-letters-'+lg,getItems:()=>{
+  const out=[];let prev='';
+  while(out.length<(lg==='K'?40:60)){const c=Math.random()<.5?pick(UP):pick(LO);if(c.toLowerCase()!==prev.toLowerCase()){out.push(c);prev=c}}
+  return {items:out};
+}});
+
+/* ---------- SOUNDS (phonemes) ---------- */
+const PH={
+  K:['a-t','u-p','i-n','o-n','i-t','m-e','g-o','s-ee','sh-oe','e-gg','c-a-t','d-o-g','s-u-n','m-a-p','b-e-d','f-i-sh','sh-i-p','ch-i-n','b-oa-t','m-oo-n','r-ai-n','sh-ee-p','l-igh-t','p-i-g'],
+  1:['c-a-t','f-i-sh','sh-i-p','ch-i-n','b-oa-t','m-oo-n','r-ai-n','sh-ee-p','l-igh-t','f-r-o-g','s-t-o-p','n-e-s-t','h-a-n-d','c-l-a-p','l-a-m-p','d-e-s-k','s-w-i-m','j-u-m-p','d-r-u-m','p-l-a-n-t','s-t-a-m-p','c-r-i-s-p','b-l-e-n-d','t-w-i-s-t']
+};
+const SNOTE={K:'Kindergarten: hear and count the sounds in short words.',1:'Grade 1: break words with blends, like "frog" and "plant," into every sound.'};
+let sg=store.get('rd-sg','K'), sQ=null, sRound=[], sMissed=false, sLock=false;
+function sStart(){setPills('sGrades','g',sg);$('sNote').textContent=SNOTE[sg];sRound=[];sNext()}
+function sNext(){
+  if(sRound.length>=10){$('sMsg').textContent=`Round done: ${sRound.filter(x=>x==='done').length} of 10 on the first try. Keep going!`;sRound=[]}
+  sLock=false;sMissed=false;
+  let w;do{w=pick(PH[sg])}while(sQ&&w===sQ.w&&PH[sg].length>1);
+  const parts=w.split('-');sQ={w,parts,word:parts.join(''),n:parts.length};
+  $('sBoxes').innerHTML='';
+  $('sChoices').innerHTML='';
+  [2,3,4,5].forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>sPick(n,b);$('sChoices').appendChild(b)});
+  if(canSpeak){$('sShown').hidden=true;say(sQ.word)}else{$('sShown').hidden=false;$('sSay').hidden=true;$('sShown').textContent=sQ.word}
+  paintProg($('sProg'),sRound,10);
+}
+function sPick(n,b){
+  if(sLock)return;
+  if(n===sQ.n){
+    sLock=true;b.classList.add('yes');
+    $('sBoxes').innerHTML=sQ.parts.map(p=>`<span>${p}</span>`).join('');
+    sRound.push(sMissed?'miss':'done');$('sMsg').textContent=`${pick(cheers)} "${sQ.word}" has ${n} sounds.`;
+    say(sQ.word);paintProg($('sProg'),sRound,10);setTimeout(sNext,2200);
+  }else{sMissed=true;b.classList.add('no');b.disabled=true;$('sMsg').textContent='Not quite. Say it slowly and count on your fingers.';say(sQ.word)}
+}
+$('sSay').onclick=()=>say(sQ.word);
+document.querySelectorAll('#sGrades button').forEach(b=>b.onclick=()=>{sg=b.dataset.g;store.set('rd-sg',sg);sStart()});
+
+/* ---------- MADE-UP WORDS ---------- */
+const NW={
+  1:['ib','ut','ag','ep','om','uf','ev','az','ik','ov','vop','tig','mab','fep','lun','zim','dov','jat','kib','nuf','rog','pem','yab','gop','hev','wub','tep','bim','lom','zat','fid','rud','kep','sog','mip','vun','jeb','laf','dup','wom','fis','nep','hib','zov','tev','yom','gub','pif','sut','bev','mof','nid','vap','juf','kom','rel','tob','gim','hap','sek'],
+  2:['blim','frub','glop','slek','plab','smot','drep','nisk','fump','vand','lemp','twop','skib','crev','snup','chab','thog','whep','chun','shev','trab','glim','spov','brom','flet','clug','stip','prev','gost','balt','mesk','vunt','dilp','sotch','quam','yesh','thid','wimb','chot','frem'],
+  3:['vope','tibe','mave','fune','kope','zibe','bape','dute','lade','fote','plake','strim','blaim','groat','sleen','throm','cride','splog','fleep','droam','kaim','voat','meep','sloy','chirk','starn','blorn','quike','stribe','glaish']
+};
+const MNOTE={1:'Kindergarten to grade 1: sound out short made-up words, like "vop" and "ib."',2:'Grade 2: blends and digraphs, like "frub," "chab" and "whep."',3:'Grade 3: silent e and vowel teams, like "vope," "blaim" and "droam."'};
+let mg=String(store.get('rd-mg','1'));
+sheets.madeup=makeSheet($('mSheet'),{layout:'grid wordy',unit:'words',key:()=>'rd-best-nw-'+mg,getItems:()=>{
+  const pool=mg==='3'?[...NW[3],...shuffle(NW[2]).slice(0,10)]:NW[mg];
+  let out=[];while(out.length<50)out=out.concat(shuffle(pool));return {items:out.slice(0,50)};
+}});
+const REAL={
+  1:['cat','dog','sun','map','bed','pig','hop','run','sit','big','red','top','fun','hat','net','cup','bus','leg','fox','jam','wet','mud','zip','kid','up','in','at','on'],
+  2:['frog','stop','ship','chin','shop','jump','nest','hand','clap','lamp','desk','swim','drum','much','then','with','flag','plum','shell','trip','chop','when','thin','duck'],
+  3:['cake','bike','rope','cute','rain','boat','seed','play','snow','stripe','sleep','train','grape','smile','chair','spoon','cloud','night','light','coin','skate','dream','float','shine']
+};
+let mm=store.get('rd-mm','sort'), mQ=null, mRound=[], mMissed=false, mLock=false;
+function mStart(){
+  setPills('mGrades','g',mg);setPills('mModes','m',mm);$('mNote').textContent=MNOTE[mg];
+  $('mSort').hidden=mm!=='sort';$('mSheet').hidden=mm==='sort';$('mGuide').hidden=mm==='sort';
+  if(mm==='sort'){mRound=[];mNext()}else sheets.madeup.load();
+}
+function mNext(){
+  if(mRound.length>=10){$('mMsg').textContent=`Round done: ${mRound.filter(x=>x==='done').length} of 10 on the first try. Keep going!`;mRound=[]}
+  else $('mMsg').textContent='';
+  mLock=false;mMissed=false;const real=Math.random()<.5;
+  let w;do{w=pick(real?REAL[mg]:NW[mg])}while(mQ&&w===mQ.w);
+  mQ={w,real};$('mWord').textContent=w;
+  document.querySelectorAll('#mChoices button').forEach(b=>{b.className='';b.disabled=false});
+  paintProg($('mProg'),mRound,10);
+}
+document.querySelectorAll('#mChoices button').forEach(b=>b.onclick=()=>{
+  if(mLock)return;
+  if((b.dataset.a==='real')===mQ.real){
+    mLock=true;b.classList.add('yes');mRound.push(mMissed?'miss':'done');
+    $('mMsg').textContent=mQ.real?`${pick(cheers)} "${mQ.w}" is a real word.`:`${pick(cheers)} "${mQ.w}" is made up, but you can still read it!`;
+    if(mQ.real)say(mQ.w);paintProg($('mProg'),mRound,10);setTimeout(mNext,1500);
+  }else{mMissed=true;b.classList.add('no');b.disabled=true;$('mMsg').textContent='Try again. Read it one sound at a time.'}
+});
+document.querySelectorAll('#mModes button').forEach(b=>b.onclick=()=>{mm=b.dataset.m;store.set('rd-mm',mm);mStart()});
+document.querySelectorAll('#mGrades button').forEach(b=>b.onclick=()=>{mg=b.dataset.g;store.set('rd-mg',mg);mStart()});
+
+/* ---------- FILL THE BLANK ---------- */
+const MAZE={
+  2:[["The dog wagged its ___ when it saw me.","tail","sky","jump"],["We ate ___ for lunch at school.","sandwiches","shoes","quickly"],["Please ___ the door so the cat stays inside.","close","happy","under"],["The sun was hot, so we sat in the ___.","shade","rain","sleep"],["My sister ___ a picture of a horse.","drew","green","over"],["Birds build ___ in the trees.","nests","cars","softly"],["I brush my teeth ___ I go to bed.","before","purple","swim"],["The baby was tired, so she took a ___.","nap","bus","loud"],["He put on his coat because it was ___ outside.","cold","ate","table"],["We read a book about ___ that live in the ocean.","whales","running","tall"],["Mom used ___ to cut the paper.","scissors","clouds","sang"],["The team cheered when they ___ the game.","won","blue","chair"],["Grandpa ___ us a story about his farm.","told","under","seven"],["Frogs like to ___ into the pond.","jump","fork","sleepy"],["It started to rain, so I opened my ___.","umbrella","sandwich","yesterday"]],
+  4:[["The scientist looked through the ___ to study the tiny cells.","microscope","mountain","whispered"],["Because the river had flooded, the road was ___ for two days.","closed","delicious","quietly"],["Maria practiced the piano every day, and her hard work finally ___ off.","paid","painted","blanket"],["The explorers packed extra food in case the journey took ___ than planned.","longer","kitchen","brightly"],["Desert plants store water in their thick stems to ___ long dry seasons.","survive","borrow","yellow"],["The museum guide asked us not to ___ the ancient paintings.","touch","travel","thunder"],["After the storm, volunteers helped ___ the fallen branches from the park.","remove","invent","careful"],["The author added a short ___ explaining why she wrote the book.","note","puddle","galloped"],["Penguins cannot fly, but they are excellent ___.","swimmers","sandwiches","slowly"],["The class voted, and most students ___ to visit the aquarium.","chose","chair","softer"],["Without enough sunlight, the plant's leaves began to ___.","wilt","laugh","ladder"],["Jamal checked the forecast to ___ whether he would need an umbrella.","decide","decorate","distant"],["The bridge was built from steel so it could ___ heavy trucks.","support","whisper","purple"],["Our teacher reminded us to ___ our answers before turning in the test.","check","chimney","sleepy"],["Ancient sailors used the stars to ___ across the open sea.","navigate","nibble","noisy"]]
+};
+const BNOTE={2:'Grades 2–3: read the whole sentence and choose the word that makes sense.',4:'Grades 4–5: use the meaning of the whole sentence to choose the best word.'};
+let bg=String(store.get('rd-bg','2')), bList=[], bRound=[], bQ=null, bMissed=false, bLock=false;
+function bStart(){setPills('bGrades','g',bg);$('bNote').textContent=BNOTE[bg];bList=shuffle(MAZE[bg]);bRound=[];bNext()}
+function bNext(){
+  if(bRound.length>=10){$('bMsg').textContent=`Round done: ${bRound.filter(x=>x==='done').length} of 10 on the first try. New sentences coming!`;bRound=[];bList=shuffle(MAZE[bg])}
+  bLock=false;bMissed=false;const [s,ans,...wrong]=bList[bRound.length];bQ={s,ans};
+  $('bSentence').innerHTML=s.replace('___','<span class="blank">&nbsp;</span>');
+  $('bChoices').innerHTML='';
+  shuffle([ans,...wrong]).forEach(w=>{const b=document.createElement('button');b.textContent=w;b.onclick=()=>bPick(w,b);$('bChoices').appendChild(b)});
+  paintProg($('bProg'),bRound,10);
+}
+function bPick(w,b){
+  if(bLock)return;
+  if(w===bQ.ans){bLock=true;b.classList.add('yes');$('bSentence').innerHTML=bQ.s.replace('___',`<span class="blank">${w}</span>`);bRound.push(bMissed?'miss':'done');$('bMsg').textContent=pick(cheers)+' Read it again out loud.';paintProg($('bProg'),bRound,10);setTimeout(bNext,2200)}
+  else{bMissed=true;b.classList.add('no');b.disabled=true;$('bMsg').textContent=`Try reading the sentence with "${w}." Does it make sense?`}
+}
+document.querySelectorAll('#bGrades button').forEach(b=>b.onclick=()=>{bg=b.dataset.g;store.set('rd-bg',bg);bStart()});
+
+/* ---------- READ ALOUD (original stories) ---------- */
+const STORIES={
+  1:[{t:'Pip the Pup',x:'Pip is a little brown pup. He likes to run in the yard. One day Pip saw a red ball by the gate. He ran to get it. The ball rolled down the hill. Pip ran fast, but the ball went faster. It stopped by a big tree. Pip grabbed the ball and wagged his tail. Then he ran all the way home to show Mom.'},
+     {t:'The Big Box',x:'Sam got a big box. It was as big as a bed. Sam cut a door in the box. He cut a window too. He put a soft rug inside. Then he got his books and his best toy cat. Sam sat in the box and read a book. His sister came to look. "Can I come in?" she asked. "Yes," said Sam. "There is room for two."'}],
+  2:[{t:'The Garden Plan',x:'Maya and her dad wanted to grow a garden. First, they picked a sunny spot behind the house. Dad dug the dirt with a shovel while Maya pulled out rocks and weeds. Next, they planted seeds in neat rows. Maya planted beans, carrots, and tall sunflowers. Every morning she gave the seeds a drink of water. After two weeks, tiny green sprouts poked out of the ground. Maya jumped up and down. By the end of summer, the sunflowers were taller than Dad, and they had beans for dinner almost every night.'},
+     {t:'Snow Day',x:'When Ben woke up, the world outside his window was white. Snow covered the cars, the trees, and the top of the mailbox. The radio said there would be no school today. Ben cheered so loudly that the dog started barking. He pulled on his boots, his puffy coat, and his striped hat. Outside, the snow crunched under his feet. Ben and his neighbor Lily rolled three giant snowballs and stacked them to make a snowman. They gave him a carrot nose and two buttons for eyes. When their fingers got cold, they went inside for hot cocoa.'}],
+  3:[{t:'The Lost Kite',x:'On the windiest day of spring, Leo carried his new kite to the park. It was shaped like a dragon, with a long tail made of ribbons. Leo let out the string, and the dragon climbed higher and higher until it looked as small as a bird. Suddenly a strong gust tugged the string right out of his hands. The kite drifted over the pond and landed in the branches of an old oak tree. Leo felt like crying. Then he noticed a park worker trimming bushes nearby. She brought over a ladder and a long pole with a hook on the end. Carefully, she freed the dragon from the branches. Leo thanked her and promised to tie the string around his wrist next time.'},
+     {t:'The Science Fair',x:'Nora had one week to finish her science fair project. She wanted to find out which kind of paper towel soaked up the most water. She bought three different brands and cut each one into squares that were exactly the same size. Then she dipped each square into a cup of water for ten seconds and squeezed the water into a measuring cup. She repeated the test five times for each brand and wrote every result in her notebook. The cheapest towel held the least water, but the most expensive one was not the winner. A middle brand soaked up the most. On the day of the fair, Nora explained her results so clearly that the judges asked to buy her a fresh roll of paper towels.'}],
+  4:[{t:'How Bees Talk',x:'Honeybees cannot speak, but they still share important news with one another. When a worker bee discovers a patch of flowers full of nectar, she flies back to the hive to tell her sisters. She does this by dancing. If the flowers are close, she moves in a small circle. If they are far away, she performs a waggle dance, shaking her body as she walks in a straight line. The direction of that line shows which way to fly compared to the sun. The length of the waggle tells how far the trip will be. Other bees crowd around the dancer, feeling her movements with their antennae. Soon dozens of workers zoom out of the hive and head straight for the flowers. Scientists spent years studying these dances before they finally understood the code.'}],
+  5:[{t:'The Night Lights',x:"For thousands of years, people in the far north have looked up at winter skies and seen ribbons of green and purple light rippling above them. These lights are called the aurora borealis, or northern lights. Long ago, people told stories to explain them. Some believed the lights were spirits dancing, while others thought they were reflections of giant schools of fish. Today, scientists know the real cause begins about ninety-three million miles away, at the sun. The sun constantly releases a stream of tiny charged particles into space. When some of these particles reach Earth, our planet's magnetic field guides them toward the North and South Poles. There they crash into gases high in the atmosphere, and the collisions give off light. Oxygen usually glows green, while nitrogen can create shades of blue and purple. Even though we understand the science, watching the sky shimmer on a cold, dark night still feels like magic."}]
+};
+let ag=String(store.get('rd-ag','2')), aIdx=0;
+sheets.aloud=makeSheet($('aSheet'),{layout:'text',unit:'words',key:()=>'rd-best-orf-'+ag,getItems:()=>{
+  const list=STORIES[ag];aIdx=(aIdx+1)%list.length;const s=list[aIdx];return {title:s.t,items:s.x.split(/\s+/)};
+}});
+const QS={
+  'Pip the Pup':[['What color was the ball?','red','blue','green'],['Where did the ball stop?','by a big tree','in a pond','under a bed'],['Who did Pip run home to show?','Mom','Dad','the cat']],
+  'The Big Box':[['What did Sam cut in the box?','a door and a window','a hole for a dog','a slide'],['What did Sam bring inside?','his books and toy cat','his bike','a snack'],['Who asked to come in?','his sister','his dad','his friend']],
+  'The Garden Plan':[['What did Dad use to dig?','a shovel','a spoon','his hands'],['How long until the sprouts came up?','two weeks','two days','two months'],['What grew taller than Dad?','the sunflowers','the beans','the carrots']],
+  'Snow Day':[['Why was Ben so happy?','There was no school.','He got a new dog.','It was his birthday.'],['Who built the snowman with Ben?','Lily','his dad','his dog'],['What did they use for the nose?','a carrot','a button','a rock']],
+  'The Lost Kite':[['What was the kite shaped like?','a dragon','a bird','a fish'],['Where did the kite land?','in an oak tree','in the pond','on a roof'],['What will Leo do next time?','tie the string around his wrist','stay home','buy a bigger kite']],
+  'The Science Fair':[['What was Nora testing?','which paper towel soaks up the most water','which plant grows fastest','how fast ice melts'],['How many times did she repeat each test?','five','two','ten'],['Which paper towel won?','a middle brand','the cheapest one','the most expensive one']],
+  'How Bees Talk':[['How do honeybees share news about flowers?','by dancing','by humming songs','by changing color'],['What does the length of the waggle tell other bees?','how far to fly','what color the flowers are','how many bees to send'],['What do bees use to feel the dance?','their antennae','their wings','their stingers']],
+  'The Night Lights':[['Where does the cause of the northern lights begin?','at the sun','in the ocean','on the moon'],["What guides the particles toward the poles?","Earth's magnetic field","the wind","the clouds"],['What color does oxygen usually glow?','green','orange','white']]
+};
+let am=store.get('rd-am','solo'), aS=null, aTimer=null;
+const mmss=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+function aStart(){
+  setPills('aGrades','g',ag);setPills('aModes','m',am);aIdx=-1;clearInterval(aTimer);
+  $('aSolo').hidden=am!=='solo';$('aSheet').hidden=am==='solo';$('aGuide').hidden=am==='solo';
+  $('aNote').textContent=am==='solo'?'Read the whole story, then answer 3 questions about it. Your speed only counts when you understand what you read.':'Your child reads the story out loud for one minute. Track progress against their own best, not anyone else\'s.';
+  if(am==='solo')soloLoad();else sheets.aloud.load();
+}
+function soloLoad(){
+  clearInterval(aTimer);const list=STORIES[ag];aIdx=(aIdx+1)%list.length;const s=list[aIdx];
+  aS={s,words:s.x.split(/\s+/).length,t0:0,secs:0,right:0};
+  $('aText').innerHTML=`<h3>${s.t}</h3><p style="margin:0">${s.x}</p>`;$('aText').classList.add('veil');$('aText').hidden=false;
+  $('aClock').textContent='0:00';$('aBest').textContent=store.get('rd-best-silent-'+ag,'–');
+  $('aGo').hidden=false;$('aDone').hidden=true;$('aLook').hidden=true;$('aQ').hidden=true;$('aRes').hidden=true;$('aNew').textContent='New story';
+  $('aSP').textContent='Tap Start, then read the whole story. Tap "I\'m done" when you finish.';
+}
+$('aGo').onclick=()=>{
+  aS.t0=Date.now();$('aText').classList.remove('veil');$('aGo').hidden=true;$('aDone').hidden=false;
+  $('aSP').textContent='Read carefully. Questions come next!';
+  aTimer=setInterval(()=>$('aClock').textContent=mmss((Date.now()-aS.t0)/1000),250);
+};
+$('aDone').onclick=()=>{
+  clearInterval(aTimer);aS.secs=Math.max(5,(Date.now()-aS.t0)/1000);
+  $('aDone').hidden=true;$('aText').hidden=true;$('aLook').hidden=false;$('aLook').textContent='Look back at the story';
+  $('aSP').textContent=`You read ${aS.words} words in ${mmss(aS.secs)}. Now the questions.`;
+  $('aQ').hidden=false;askQ(0);
+};
+$('aLook').onclick=()=>{const h=!$('aText').hidden;$('aText').hidden=h;$('aLook').textContent=h?'Look back at the story':'Hide the story'};
+function askQ(i){
+  const qs=QS[aS.s.t];if(i>=qs.length)return soloFinish();
+  const [qt,ans,...wrong]=qs[i];let missed=false,lock=false;
+  $('aQNum').textContent=`Question ${i+1} of ${qs.length}`;$('aQText').textContent=qt;$('aQMsg').textContent='';$('aQChoices').innerHTML='';
+  shuffle([ans,...wrong]).forEach(w=>{const b=document.createElement('button');b.textContent=w;
+    b.onclick=()=>{if(lock)return;
+      if(w===ans){lock=true;b.classList.add('yes');if(!missed)aS.right++;$('aQMsg').textContent=pick(cheers);setTimeout(()=>askQ(i+1),1100)}
+      else{missed=true;b.classList.add('no');b.disabled=true;$('aQMsg').textContent='Not quite. Tap "Look back" if you need to.'}};
+    $('aQChoices').appendChild(b)});
+}
+function soloFinish(){
+  const n=QS[aS.s.t].length, wpm=Math.round(aS.words*60/aS.secs), k='rd-best-silent-'+ag, prev=store.get(k,0), counts=aS.right>=n-1;
+  if(counts&&wpm>prev)store.set(k,wpm);
+  $('aQ').hidden=true;$('aLook').hidden=true;$('aText').hidden=true;$('aNew').textContent='Next story';
+  $('aBest').textContent=store.get(k,'–');
+  const r=$('aRes');r.hidden=false;
+  r.innerHTML=`<div><b>${wpm}</b><small>words a minute</small></div><div><b>${aS.right}/${n}</b><small>right on first try</small></div><div><b>${mmss(aS.secs)}</b><small>reading time</small></div>`;
+  $('aSP').textContent=aS.right===n?(counts&&wpm>prev&&prev?`New best, up from ${prev}! You understood every part.`:'Great reading! You understood every part.')
+    :counts?'Good reading! Look back at the one you missed.'
+    :'Try reading a little slower so the story sticks. Your speed counts toward your best when you get at least 2 right.';
+}
+$('aNew').onclick=soloLoad;
+document.querySelectorAll('#aModes button').forEach(b=>b.onclick=()=>{am=b.dataset.m;store.set('rd-am',am);aStart()});
+document.querySelectorAll('#aGrades button').forEach(b=>b.onclick=()=>{ag=b.dataset.g;store.set('rd-ag',ag);aStart()});
+
+/* ---------- boot ---------- */
+lStart();sStart();mStart();bStart();aStart();
+</script>
+</body>
+</html>
