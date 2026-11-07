@@ -1,2 +1,2 @@
 # math4kids
-Math kids for kids K to 5.
+Interesting apps for kids!
