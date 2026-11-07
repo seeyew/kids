@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Starter Projects</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fdf8ef; --card: #ffffff; --ink: #1f2430; --muted: #5b6272;
+  --accent: #2f6fde; --accent-ink: #ffffff; --code-bg: #f3f1ec; --line: #e6e0d4;
+  --tag: #ffe08a; --tag-ink: #5a4300;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171c; --card: #1e2128; --ink: #eceef3; --muted: #a3a9b6;
+    --accent: #6b9cff; --accent-ink: #10131a; --code-bg: #12141a; --line: #2c303a;
+    --tag: #4a3c10; --tag-ink: #ffe08a;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: Nunito, system-ui, sans-serif; line-height: 1.55; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+h1, h2 { font-family: Fredoka, Nunito, sans-serif; font-weight: 600; margin: 0; }
+h1 { font-size: 2.2rem; }
+.lead { color: var(--muted); font-size: 1.1rem; margin: 8px 0 24px; }
+.steps { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; margin-bottom: 28px; }
+.steps h2 { font-size: 1.2rem; margin-bottom: 6px; }
+.steps ol { margin: 0; padding-left: 20px; }
+.steps li { margin: 4px 0; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+.toc a { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; color: var(--ink); text-decoration: none; font-weight: 700; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; margin-bottom: 22px; }
+.card-head { display: flex; gap: 16px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
+.card h2 { font-size: 1.5rem; margin-top: 6px; }
+.card p { margin: 4px 0 12px; }
+.note { color: var(--muted); }
+.tag { background: var(--tag); color: var(--tag-ink); border-radius: 999px; padding: 2px 10px; font-size: .8rem; font-weight: 700; }
+.actions { display: flex; gap: 8px; }
+button.copy, a.dl { font: inherit; font-weight: 700; border-radius: 10px; padding: 8px 14px; cursor: pointer; text-decoration: none; }
+button.copy { background: var(--accent); color: var(--accent-ink); border: 0; }
+a.dl { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
+pre { background: var(--code-bg); border-radius: 12px; padding: 14px; overflow-x: auto; max-height: 380px; margin: 0; }
+code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .85rem; }
+footer { color: var(--muted); font-size: .9rem; margin-top: 32px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Python Starter Projects</h1>
+  <p class="lead">Pick a starter, get it running, then change it to make it yours. Every file has comments explaining the code and level-up ideas at the bottom.</p>
+
+  <div class="steps">
+    <h2>How to use a starter</h2>
+    <ol>
+      <li>Pick a project below and click <b>Copy code</b>.</li>
+      <li>Paste it into your Python editor and press Run.</li>
+      <li>Read the comments (lines that start with <code>#</code>) to see what each part does.</li>
+      <li>Change one thing at a time: a color, a speed, a question. Run it again to see what happened.</li>
+      <li>Try the <b>Level up ideas</b> at the bottom of the file.</li>
+    </ol>
+    <p class="note">Where to run: the Quiz app works in any Python editor. Pong, Snake, and Paint use turtle graphics with the keyboard and mouse, so run them in IDLE (comes with Python on a laptop) or another editor that supports turtle.</p>
+  </div>
+
+  <nav class="toc">
+    <a href="#quiz">Quiz app</a><a href="#pong">Pong</a><a href="#snake">Snake</a><a href="#paint">Paint app</a>
+  </nav>
+
+  
+<section class="card" id="quiz">
+  <div class="card-head">
+    <div>
+      <span class="tag">Easiest</span>
+      <h2>Quiz app</h2>
+      <p>Ask questions, check answers, keep score. <span class="note">Runs in any Python editor, including Code.org Python Lab.</span></p>
+    </div>
+    <div class="actions">
+      <button class="copy" data-target="code-quiz">Copy code</button>
+      <a class="dl" href="quiz.py" download>Download</a>
+    </div>
+  </div>
+  <pre><code id="code-quiz"># QUIZ APP STARTER
+# Ask questions, check answers, and keep score.
+# Runs in any Python editor, no extra setup needed.
+
+# Each question is a pair: (question, answer)
+# TRY THIS: change these to your own questions!
+questions = [
+    (&quot;What is 7 x 8? &quot;, &quot;56&quot;),
+    (&quot;What planet is closest to the sun? &quot;, &quot;mercury&quot;),
+    (&quot;How many legs does a spider have? &quot;, &quot;8&quot;),
+]
+
+score = 0
+
+print(&quot;Welcome to my quiz!&quot;)
+name = input(&quot;What is your name? &quot;)
+
+for question, answer in questions:
+    guess = input(question)
+    # .lower() and .strip() so &quot;Mercury &quot; still counts as &quot;mercury&quot;
+    if guess.lower().strip() == answer:
+        print(&quot;Correct!&quot;)
+        score = score + 1
+    else:
+        print(&quot;Not quite. The answer was&quot;, answer)
+
+print(name + &quot;, you got&quot;, score, &quot;out of&quot;, len(questions))
+
+# LEVEL UP IDEAS
+# 1. Add 5 more questions.
+# 2. Print a special message if they get a perfect score.
+# 3. Ask &quot;Play again?&quot; and start over if they say yes.
+# 4. Shuffle the questions with: import random, then random.shuffle(questions)
+</code></pre>
+</section>
+<section class="card" id="pong">
+  <div class="card-head">
+    <div>
+      <span class="tag">Game</span>
+      <h2>Pong</h2>
+      <p>Bounce the ball with your paddle. Up and Down arrow keys. <span class="note">Uses turtle graphics.</span></p>
+    </div>
+    <div class="actions">
+      <button class="copy" data-target="code-pong">Copy code</button>
+      <a class="dl" href="pong.py" download>Download</a>
+    </div>
+  </div>
+  <pre><code id="code-pong"># PONG STARTER
+# Keep the ball from getting past your paddle.
+# Controls: Up and Down arrow keys.
+# Uses turtle, which comes with Python.
+
+import turtle
+
+# --- Set up the screen ---
+screen = turtle.Screen()
+screen.title(&quot;My Pong&quot;)
+screen.bgcolor(&quot;black&quot;)
+screen.setup(width=800, height=600)
+screen.tracer(0)  # we redraw the screen ourselves, so it runs smoothly
+
+# --- The paddle ---
+paddle = turtle.Turtle()
+paddle.shape(&quot;square&quot;)
+paddle.color(&quot;white&quot;)
+paddle.shapesize(stretch_wid=5, stretch_len=1)  # tall and thin
+paddle.penup()
+paddle.goto(-350, 0)
+
+# --- The ball ---
+ball = turtle.Turtle()
+ball.shape(&quot;circle&quot;)
+ball.color(&quot;yellow&quot;)
+ball.penup()
+ball.dx = 3   # how far the ball moves sideways each step
+ball.dy = 3   # how far the ball moves up/down each step
+
+# --- The score ---
+score = 0
+pen = turtle.Turtle()
+pen.color(&quot;white&quot;)
+pen.penup()
+pen.hideturtle()
+pen.goto(0, 260)
+
+def show_score():
+    pen.clear()
+    pen.write(&quot;Score: &quot; + str(score), align=&quot;center&quot;, font=(&quot;Courier&quot;, 24, &quot;bold&quot;))
+
+show_score()
+
+# --- Moving the paddle ---
+def paddle_up():
+    if paddle.ycor() &lt; 250:
+        paddle.sety(paddle.ycor() + 30)
+
+def paddle_down():
+    if paddle.ycor() &gt; -250:
+        paddle.sety(paddle.ycor() - 30)
+
+screen.listen()
+screen.onkeypress(paddle_up, &quot;Up&quot;)
+screen.onkeypress(paddle_down, &quot;Down&quot;)
+
+# --- The game loop: runs over and over ---
+def game_loop():
+    global score
+    ball.setx(ball.xcor() + ball.dx)
+    ball.sety(ball.ycor() + ball.dy)
+
+    # Bounce off the top and bottom
+    if ball.ycor() &gt; 290 or ball.ycor() &lt; -290:
+        ball.dy = -ball.dy
+
+    # Bounce off the right wall
+    if ball.xcor() &gt; 390:
+        ball.dx = -ball.dx
+
+    # Hit the paddle!
+    if -350 &lt; ball.xcor() &lt; -330 and abs(ball.ycor() - paddle.ycor()) &lt; 55:
+        ball.dx = -ball.dx
+        score = score + 1
+        show_score()
+
+    # Missed! Start the ball again from the middle
+    if ball.xcor() &lt; -390:
+        ball.goto(0, 0)
+        ball.dx = 3
+        score = 0
+        show_score()
+
+    screen.update()
+    screen.ontimer(game_loop, 16)  # about 60 times a second
+
+game_loop()
+turtle.done()
+
+# LEVEL UP IDEAS
+# 1. Make the ball faster each time you hit it (try ball.dx = ball.dx * 1.1).
+# 2. Change the colors or make the paddle smaller for a harder game.
+# 3. Add a second paddle on the right for a friend (use the W and S keys).
+# 4. Show &quot;Game Over&quot; after 3 misses.
+</code></pre>
+</section>
+<section class="card" id="snake">
+  <div class="card-head">
+    <div>
+      <span class="tag">Game</span>
+      <h2>Snake</h2>
+      <p>Eat food, grow longer, don't crash. Arrow keys. <span class="note">Uses turtle graphics.</span></p>
+    </div>
+    <div class="actions">
+      <button class="copy" data-target="code-snake">Copy code</button>
+      <a class="dl" href="snake.py" download>Download</a>
+    </div>
+  </div>
+  <pre><code id="code-snake"># SNAKE STARTER
+# Eat the food to grow longer. Don&#x27;t hit the walls or yourself!
+# Controls: arrow keys.
+# Uses turtle, which comes with Python.
+
+import turtle
+import random
+
+STEP = 20  # size of one square
+
+# --- Set up the screen ---
+screen = turtle.Screen()
+screen.title(&quot;My Snake&quot;)
+screen.bgcolor(&quot;darkgreen&quot;)
+screen.setup(width=600, height=600)
+screen.tracer(0)
+
+# --- The snake&#x27;s head ---
+head = turtle.Turtle()
+head.shape(&quot;square&quot;)
+head.color(&quot;lightgreen&quot;)
+head.penup()
+head.direction = &quot;stop&quot;
+
+body = []  # the rest of the snake goes in this list
+
+# --- The food ---
+food = turtle.Turtle()
+food.shape(&quot;circle&quot;)
+food.color(&quot;red&quot;)
+food.penup()
+
+def move_food():
+    food.goto(random.randint(-14, 14) * STEP, random.randint(-14, 14) * STEP)
+
+move_food()
+
+# --- The score ---
+score = 0
+pen = turtle.Turtle()
+pen.color(&quot;white&quot;)
+pen.penup()
+pen.hideturtle()
+pen.goto(0, 260)
+
+def show_score():
+    pen.clear()
+    pen.write(&quot;Score: &quot; + str(score), align=&quot;center&quot;, font=(&quot;Courier&quot;, 20, &quot;bold&quot;))
+
+show_score()
+
+# --- Steering (no turning straight back into yourself) ---
+def go_up():
+    if head.direction != &quot;down&quot;:
+        head.direction = &quot;up&quot;
+
+def go_down():
+    if head.direction != &quot;up&quot;:
+        head.direction = &quot;down&quot;
+
+def go_left():
+    if head.direction != &quot;right&quot;:
+        head.direction = &quot;left&quot;
+
+def go_right():
+    if head.direction != &quot;left&quot;:
+        head.direction = &quot;right&quot;
+
+screen.listen()
+screen.onkeypress(go_up, &quot;Up&quot;)
+screen.onkeypress(go_down, &quot;Down&quot;)
+screen.onkeypress(go_left, &quot;Left&quot;)
+screen.onkeypress(go_right, &quot;Right&quot;)
+
+def move_head():
+    if head.direction == &quot;up&quot;:
+        head.sety(head.ycor() + STEP)
+    if head.direction == &quot;down&quot;:
+        head.sety(head.ycor() - STEP)
+    if head.direction == &quot;left&quot;:
+        head.setx(head.xcor() - STEP)
+    if head.direction == &quot;right&quot;:
+        head.setx(head.xcor() + STEP)
+
+def reset_game():
+    global score
+    head.goto(0, 0)
+    head.direction = &quot;stop&quot;
+    for part in body:
+        part.hideturtle()
+    body.clear()
+    score = 0
+    show_score()
+
+# --- The game loop ---
+def game_loop():
+    global score
+
+    # Eat the food: grow one square longer
+    if head.distance(food) &lt; STEP:
+        move_food()
+        part = turtle.Turtle()
+        part.shape(&quot;square&quot;)
+        part.color(&quot;green&quot;)
+        part.penup()
+        body.append(part)
+        score = score + 1
+        show_score()
+
+    # Each body part moves to where the part in front of it was
+    for i in range(len(body) - 1, 0, -1):
+        body[i].goto(body[i - 1].xcor(), body[i - 1].ycor())
+    if body:
+        body[0].goto(head.xcor(), head.ycor())
+
+    move_head()
+
+    # Hit a wall?
+    if abs(head.xcor()) &gt; 290 or abs(head.ycor()) &gt; 290:
+        reset_game()
+
+    # Hit yourself?
+    for part in body:
+        if part.distance(head) &lt; STEP / 2:
+            reset_game()
+            break
+
+    screen.update()
+    screen.ontimer(game_loop, 120)  # smaller number = faster snake
+
+game_loop()
+turtle.done()
+
+# LEVEL UP IDEAS
+# 1. Make the snake speed up as it gets longer.
+# 2. Keep a high score that stays when you restart.
+# 3. Add golden food worth 3 points.
+# 4. Let the snake wrap around to the other side instead of hitting walls.
+</code></pre>
+</section>
+<section class="card" id="paint">
+  <div class="card-head">
+    <div>
+      <span class="tag">App</span>
+      <h2>Paint app</h2>
+      <p>Drag the mouse to draw. Keys change colors and brush size. <span class="note">Uses turtle graphics.</span></p>
+    </div>
+    <div class="actions">
+      <button class="copy" data-target="code-paint">Copy code</button>
+      <a class="dl" href="paint.py" download>Download</a>
+    </div>
+  </div>
+  <pre><code id="code-paint"># PAINT APP STARTER
+# Drag with your mouse to draw. Press keys to change colors.
+# Keys: r = red, g = green, b = blue, k = black
+#       up/down arrows = bigger/smaller brush, c = clear
+# Uses turtle, which comes with Python.
+
+import turtle
+
+screen = turtle.Screen()
+screen.title(&quot;My Paint App&quot;)
+screen.bgcolor(&quot;white&quot;)
+screen.setup(width=800, height=600)
+
+brush = turtle.Turtle()
+brush.shape(&quot;circle&quot;)
+brush.speed(0)       # draw as fast as possible
+brush.pensize(5)
+brush.color(&quot;black&quot;)
+
+# --- Drawing with the mouse ---
+def draw(x, y):
+    brush.ondrag(None)   # pause while we move, so it doesn&#x27;t lag
+    brush.goto(x, y)
+    brush.ondrag(draw)
+
+def jump(x, y):
+    # Clicking somewhere moves the brush there without drawing a line
+    brush.penup()
+    brush.goto(x, y)
+    brush.pendown()
+
+brush.ondrag(draw)
+screen.onclick(jump)
+
+# --- Changing colors ---
+def red():
+    brush.color(&quot;red&quot;)
+
+def green():
+    brush.color(&quot;green&quot;)
+
+def blue():
+    brush.color(&quot;blue&quot;)
+
+def black():
+    brush.color(&quot;black&quot;)
+
+# --- Brush size ---
+def bigger():
+    brush.pensize(brush.pensize() + 2)
+
+def smaller():
+    if brush.pensize() &gt; 2:
+        brush.pensize(brush.pensize() - 2)
+
+def clear():
+    brush.clear()
+
+screen.listen()
+screen.onkey(red, &quot;r&quot;)
+screen.onkey(green, &quot;g&quot;)
+screen.onkey(blue, &quot;b&quot;)
+screen.onkey(black, &quot;k&quot;)
+screen.onkey(bigger, &quot;Up&quot;)
+screen.onkey(smaller, &quot;Down&quot;)
+screen.onkey(clear, &quot;c&quot;)
+
+turtle.done()
+
+# LEVEL UP IDEAS
+# 1. Add more colors (try &quot;purple&quot;, &quot;orange&quot;, or &quot;pink&quot;).
+# 2. Add an eraser: a key that sets the color to &quot;white&quot;.
+# 3. Press s to stamp a shape where the brush is (look up brush.stamp()).
+# 4. Change the background color with a key.
+</code></pre>
+</section>
+
+  <footer>Stuck? Ask three friends, then ask the coach.</footer>
+</main>
+<script>
+document.querySelectorAll("button.copy").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var text = document.getElementById(btn.dataset.target).innerText;
+    var done = function () { btn.textContent = "Copied!"; setTimeout(function () { btn.textContent = "Copy code"; }, 1500); };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(done, function () { fallback(text); done(); });
+    } else { fallback(text); done(); }
+  });
+});
+function fallback(text) {
+  var ta = document.createElement("textarea");
+  ta.value = text; document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); } catch (e) {}
+  ta.remove();
+}
+</script>
+</body>
+</html>
